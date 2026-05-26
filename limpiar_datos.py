@@ -7,6 +7,13 @@ def cargar_datos(archivo):
     print(f"{df.shape[0]} filas,{df.shape[1]} columnas")
     return df
 
+def filtrar_anios(df, anio_min=2010, anio_max=2024):
+    print(f"\n🔍 FILTRANDO AÑOS {anio_min} - {anio_max}...")
+    df['AÑO'] = df['AÑO'].astype(int)
+    df = df[(df['AÑO'] >= anio_min) & (df['AÑO'] <= anio_max)]
+    print(f"   ✅ Datos después del filtro: {df.shape[0]} filas")
+    print(f"   📅 Rango de años: {df['AÑO'].min()} a {df['AÑO'].max()}")
+    return df
 def eliminar_nulos(df):
 
     print("\n Eliminando valores nulos")
@@ -135,6 +142,46 @@ def guardar_datos_limpios(df, archivo_salida = 'datos_suicidio_limpios.csv'):
     print(f"\n Datos limpios guardados en: {archivo_salida}")
     return archivo_salida
 
+
+def analizar_datos(df):
+    print("\n" + "=" * 60)
+    print(" 📊 ANÁLISIS DE DATOS (2010-2024)")
+    print("=" * 60)
+
+    # 1. TOP 5 TASAS MÁS ALTAS
+    print("\n🔝 1. TOP 5 TASAS DE SUICIDIO MÁS ALTAS:")
+    top_5 = df.nlargest(5, 'tasa_suicidio')
+    for i, row in top_5.iterrows():
+        print(f"   {i + 1}. {row['estado']} ({row['anio']}): {row['tasa_suicidio']:.2f}")
+
+    # 2. TOP 5 TASAS MÁS BAJAS
+    print("\n⬇️ 2. TOP 5 TASAS DE SUICIDIO MÁS BAJAS:")
+    bottom_5 = df.nsmallest(5, 'tasa_suicidio')
+    for i, row in bottom_5.iterrows():
+        print(f"   {i + 1}. {row['estado']} ({row['anio']}): {row['tasa_suicidio']:.2f}")
+
+    # 3. AÑO CON MAYOR TASA
+    print("\n📅 3. AÑO CON MAYOR TASA DE SUICIDIO:")
+    df_nacional = df[df['estado'] == 'NACIONAL']
+    año_max = df_nacional.loc[df_nacional['tasa_suicidio'].idxmax()]
+    print(f"   {año_max['anio']} con tasa de {año_max['tasa_suicidio']:.2f}")
+
+    # 4. GÉNERO CON TASA MÁS ALTA
+    print("\n👥 4. GÉNERO CON TASA DE SUICIDIO MÁS ALTA:")
+    promedio_hombres = df_nacional['tasa_hombres'].mean()
+    promedio_mujeres = df_nacional['tasa_mujeres'].mean()
+    print(f"   HOMBRES: {promedio_hombres:.2f}")
+    print(f"   MUJERES: {promedio_mujeres:.2f}")
+
+    # 5. TOP 5 ESTADOS 2024 Y GÉNERO PREDOMINANTE
+    print("\n🏆 5. TOP 5 ESTADOS (2024) Y GÉNERO PREDOMINANTE:")
+    df_2024 = df[(df['anio'] == 2024) & (df['estado'] != 'NACIONAL')]
+    top_5_2024 = df_2024.nlargest(5, 'tasa_suicidio')
+    for i, row in top_5_2024.iterrows():
+        if row['tasa_hombres'] > row['tasa_mujeres']:
+            print(f"   {i + 1}. {row['estado']}: {row['tasa_suicidio']:.2f} → Predomina HOMBRES")
+        else:
+            print(f"   {i + 1}. {row['estado']}: {row['tasa_suicidio']:.2f} → Predomina MUJERES")
 #============================================
 #============================================
 
@@ -145,6 +192,7 @@ def pipeline_limpieza(archivo_entrada):
 
     df = cargar_datos(archivo_entrada)
     df = eliminar_nulos(df)
+    df = filtrar_anios(df)
     df = eliminar_duplicados(df)
     df = eliminar_columnas_innecesarias(df)
     df = renombrar_columnas(df)
@@ -153,6 +201,7 @@ def pipeline_limpieza(archivo_entrada):
     df = verificar_calidad(df)
     mostrar_resumen(df)
     guardar_datos_limpios(df)
+    analizar_datos(df)
 
     return df
 
